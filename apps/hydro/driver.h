@@ -17,8 +17,6 @@
 #include <flecsi/execution/reduction.h>
 #include <ristra/utils/time_utils.h>
 #include <ristra/io/catalyst/adaptor.h>
-
-
 // system includes
 #include <iomanip>
 #include <iostream>
@@ -30,6 +28,7 @@
 namespace apps {
 namespace hydro {
   
+flecsi_register_data_client(mesh_t, meshes, mesh0);
 // create some field data.  Fields are registered as struct of arrays.
 // this allows us to access the data in different patterns.
 flecsi_register_field(
