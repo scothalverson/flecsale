@@ -133,6 +133,8 @@ real_t evaluate_time_step(
   // which is also the maximum 1/dt
   real_t dt_inv(0);
 
+  
+
   Kokkos::parallel_reduce("timestep_calc", mesh.cells(flecsi::owned).size(), KOKKOS_LAMBDA(const int& i, real_t& dti){
     dti = 0; 
     auto c = mesh.cells(flecsi::owned)[i];
@@ -514,9 +516,9 @@ void dump(
 flecsi_register_task(update_geometry, apps::hydro, loc, index|flecsi::leaf);
 flecsi_register_task(initial_conditions, apps::hydro, loc, index|flecsi::leaf);
 flecsi_register_task(initial_conditions_from_file, apps::hydro, loc, index|flecsi::leaf);
-flecsi_register_task(evaluate_time_step, apps::hydro, loc, index|flecsi::leaf);
-flecsi_register_task(evaluate_fluxes, apps::hydro, loc, index|flecsi::leaf);
-flecsi_register_task(apply_update, apps::hydro, loc, index|flecsi::leaf);
+flecsi_register_task(evaluate_time_step, apps::hydro, toc, index|flecsi::leaf);
+flecsi_register_task(evaluate_fluxes, apps::hydro, toc, index|flecsi::leaf);
+flecsi_register_task(apply_update, apps::hydro, toc, index|flecsi::leaf);
 flecsi_register_task(output, apps::hydro, loc, index|flecsi::leaf);
 flecsi_register_task(print, apps::hydro, loc, index|flecsi::leaf);
 flecsi_register_task(dump, apps::hydro, loc, index|flecsi::leaf);
