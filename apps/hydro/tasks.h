@@ -134,7 +134,7 @@ real_t evaluate_time_step(
   real_t dt_inv(0);
 
   
-/*
+
   Kokkos::parallel_reduce("timestep_calc", mesh.cells(flecsi::owned).size(), KOKKOS_LAMBDA(const int& i, real_t& dti){
     dti = 0; 
     auto c = mesh.cells(flecsi::owned)[i];
@@ -149,10 +149,7 @@ real_t evaluate_time_step(
     } // edge
   }, Kokkos::Max<real_t>(dt_inv));
 
-  */
-
-  dt_inv = 100000000;
-  //cudaErrorCheck(__LINE__);
+  cudaErrorCheck(__LINE__);
   if ( dt_inv <= 0 ) 
     THROW_RUNTIME_ERROR( "infinite delta t" );
   
@@ -182,12 +179,12 @@ void evaluate_fluxes(
   dense_handle_w<flux_data_t> flux
 ) {
 
-  //const auto & face_list = mesh.faces( flecsi::owned );
-  //auto num_faces = face_list.size();
+  const auto & face_list = mesh.faces( flecsi::owned );
+  auto num_faces = face_list.size();
 
-  //flecsi::parallel_for("evaluate_fluxes", num_faces, KOKKOS_LAMBDA(int fit){
-  flecsi::forall(f, mesh.faces(flecsi::owned), "evaluate_fluxes") {
-    //auto & f = face_list[fit];
+  Kokkos::parallel_for("evaluate_fluxes", num_faces, KOKKOS_LAMBDA(int fit){
+  //flecsi::forall(f, mesh.faces(flecsi::owned), "evaluate_fluxes") {
+    auto & f = face_list[fit];
     
     // get the cell neighbors
     auto & cells = mesh.cells(f);
@@ -211,8 +208,8 @@ void evaluate_fluxes(
     // scale the flux by the face area
     flux(f) *= f->area();
 
-  }; // for
-  //cudaErrorCheck(__LINE__);
+  }); // for
+  cudaErrorCheck(__LINE__);
   //std::cout << "finished!\n";
   //std::cin.get();
   
@@ -279,17 +276,15 @@ void apply_update(
 
 
   //auto delta_t = static_cast<real_t>( time_step );
-  //real_t delta_t = future_delta_t;
-  //const auto & cell_list = mesh.cells( flecsi::owned );
-  //auto num_cells = cell_list.size();
-  //real_t delta_t = future_delta_t;
+  real_t delta_t = future_delta_t;
+  const auto & cell_list = mesh.cells( flecsi::owned );
+  auto num_cells = cell_list.size();
 
+ 
+  Kokkos::parallel_for("apply_update", mesh.cells(flecsi::owned).size(), KOKKOS_LAMBDA(const int & cit){
+  //flecsi::forall(c, mesh.cells(flecsi::owned), "apply_update") {
 
-  //Kokkos::parallel_for("apply_update", mesh.cells(flecsi::owned).size(), KOKKOS_LAMBDA(const int & cit){
-  flecsi::forall(c, mesh.cells(flecsi::owned), "apply_update") {
-
-    //const auto & c = mesh.cells(flecsi::owned)[cit];
-    real_t delta_t = 0.01;
+    const auto & c = mesh.cells(flecsi::owned)[cit];
     // initialize the update
     flux_data_t delta_u( 0 );
 
@@ -322,7 +317,8 @@ void apply_update(
     //if ( eqns_t::internal_energy(u) < 0 || eqns_t::density(u) < 0 ) 
     //  THROW_RUNTIME_ERROR( "Negative density or internal energy encountered!" );
 
-  }; // for
+  }); // for
+  
   /* Non-Kokkos implementation
   #pragma omp parallel for
   for ( counter_t cit = 0; cit < num_cells; ++cit )
@@ -363,7 +359,7 @@ void apply_update(
       THROW_RUNTIME_ERROR( "Negative density or internal energy encountered!" );
 
   } // for
-  */
+  //*/
   //----------------------------------------------------------------------------
 }
 
@@ -524,8 +520,8 @@ flecsi_register_task(update_geometry, apps::hydro, loc, index|flecsi::leaf);
 flecsi_register_task(initial_conditions, apps::hydro, loc, index|flecsi::leaf);
 flecsi_register_task(initial_conditions_from_file, apps::hydro, loc, index|flecsi::leaf);
 flecsi_register_task(evaluate_time_step, apps::hydro, loc, index|flecsi::leaf);
-flecsi_register_task(evaluate_fluxes, apps::hydro, toc, index|flecsi::leaf);
-flecsi_register_task(apply_update, apps::hydro, toc, index|flecsi::leaf);
+flecsi_register_task(evaluate_fluxes, apps::hydro, loc, index|flecsi::leaf);
+flecsi_register_task(apply_update, apps::hydro, loc, index|flecsi::leaf);
 flecsi_register_task(output, apps::hydro, loc, index|flecsi::leaf);
 flecsi_register_task(print, apps::hydro, loc, index|flecsi::leaf);
 flecsi_register_task(dump, apps::hydro, loc, index|flecsi::leaf);
