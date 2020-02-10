@@ -108,7 +108,7 @@ flecsi_register_field(
 ///////////////////////////////////////////////////////////////////////////////
 int driver(int argc, char** argv) 
 {
-  //Kokkos::initialize();
+  Kokkos::initialize();
 
   // get the context
   auto & context = flecsi::execution::context_t::instance();
@@ -369,7 +369,7 @@ runtime->end_trace(ctx, 42);
 #endif
 
   // success if you reached here
-  //Kokkos::finalize();
+  Kokkos::finalize();
   return 0;
 
 }
